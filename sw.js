@@ -1,6 +1,6 @@
 /* Service worker: network-first for the app's own files, falling back to the
    cache when offline. Bump CACHE when shipping a release to clear old copies. */
-const CACHE = "daily-grid-v2";
+const CACHE = "daily-grid-v3";
 const ASSETS = ["./", "index.html", "styles.css", "app.js", "manifest.webmanifest",
   "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
@@ -16,7 +16,7 @@ self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== location.origin) return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: "no-cache" })
       .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return res; })
       .catch(() => caches.match(e.request).then(r => r || caches.match("index.html")))
   );
