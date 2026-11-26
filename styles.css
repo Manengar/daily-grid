@@ -1,7 +1,7 @@
 /* VOICE: a quiet morning ritual; editorial, exact, a little witty
    IDEA: the day's puzzle page in a good newspaper: a dateline, a standfirst, then tidy columns by section
    PICTURE: the segmented progress rule under the greeting, one segment per game, filling in cobalt
-   COLOUR and TYPE: warm paper, charcoal ink, cobalt accent only for state; Newsreader for display, Geist for UI
+   COLOUR and TYPE: warm paper and charcoal ink by day, deep ink-blue by night; cobalt accent only for state; Newsreader for display, Geist for UI
    LAYOUT: single 600px column, sections with hairline rules, bottom toolbar for one-thumb search/add/edit
 
    DESIGN SYSTEM
@@ -14,14 +14,14 @@
    States  hover: --hover fill · press: --press fill + 98% scale on buttons · focus: 2px --accent ring offset 2 ·
            done: ink-3 text, mark at 45%, filled cobalt checkbox · motion 140–180ms ease-out */
 :root{color-scheme:light dark;
---bg:light-dark(#F5F2EC,#161513);--raise:light-dark(#FBFAF7,#1D1C19);
---ink:light-dark(#1C1B19,#EEEBE5);--ink-2:light-dark(#5E5A53,#A9A49A);--ink-3:light-dark(#8E887E,#77726A);
---line:light-dark(#E3DED4,#2B2925);--line-2:light-dark(#D3CDC1,#3A3732);
---hover:light-dark(#EFEBE3,#211F1C);--press:light-dark(#E8E3D9,#282622);
---accent:light-dark(#2F4DB8,#93A6F0);--on-accent:light-dark(#FFFFFF,#141414);--accent-soft:light-dark(#E4E8F6,#232840);
+--bg:light-dark(#F5F2EC,#131A2A);--raise:light-dark(#FBFAF7,#1A2236);
+--ink:light-dark(#1C1B19,#E9EDF7);--ink-2:light-dark(#5E5A53,#A7B1C8);--ink-3:light-dark(#8E887E,#7D88A3);
+--line:light-dark(#E3DED4,#263049);--line-2:light-dark(#D3CDC1,#34405F);
+--hover:light-dark(#EFEBE3,#1B2439);--press:light-dark(#E8E3D9,#232D46);
+--accent:light-dark(#2F4DB8,#9DB1FF);--on-accent:light-dark(#FFFFFF,#111830);--accent-soft:light-dark(#E4E8F6,#25304F);
 --danger:light-dark(#A63A26,#E8907C);
---c-nyt:light-dark(#1C1B19,#EEEBE5);--c-wordle:light-dark(#3D6B4A,#8FC29E);--c-word:light-dark(#916315,#D9B26A);
---c-geo:light-dark(#2D6A78,#7FBBC7);--c-trivia:light-dark(#6F4A7E,#C19BD0);--c-logic:light-dark(#A6452E,#E59580);--c-other:light-dark(#6F6A62,#A9A49A);
+--c-nyt:light-dark(#1C1B19,#E9EDF7);--c-wordle:light-dark(#3D6B4A,#8FC29E);--c-word:light-dark(#916315,#D9B26A);
+--c-geo:light-dark(#2D6A78,#7FBBC7);--c-trivia:light-dark(#6F4A7E,#C19BD0);--c-logic:light-dark(#A6452E,#E59580);--c-other:light-dark(#6F6A62,#A7B1C8);
 --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;
 --serif:"Newsreader",Georgia,serif;--sans:"Geist",-apple-system,system-ui,sans-serif;
 --ease:cubic-bezier(.2,.7,.2,1)}
@@ -38,7 +38,7 @@ svg{display:block}
 .app{max-width:600px;margin:0 auto;padding:calc(env(safe-area-inset-top) + var(--s6)) max(var(--s5),env(safe-area-inset-left)) calc(env(safe-area-inset-bottom) + 112px)}
 
 /* Header */
-.dateline{font:500 13px/1.35 var(--sans);color:var(--ink-2);margin:0 0 var(--s2);display:flex;justify-content:space-between;gap:var(--s3)}
+.dateline{font:500 13px/1.35 var(--sans);color:var(--ink-2);margin:0 0 var(--s2);display:flex;justify-content:space-between;gap:var(--s3);align-items:center;min-height:20px}
 h1{font:400 34px/1.05 var(--serif);letter-spacing:-.4px;margin:0;text-wrap:balance}
 h1 em{font-style:italic;color:var(--ink-2)}
 .prog{margin-top:var(--s5)}
@@ -171,3 +171,36 @@ dialog .acts{display:flex;justify-content:flex-end;gap:var(--s2);margin-top:var(
 .handle svg{width:18px;height:18px;fill:currentColor}
 .row.dragging{background:var(--raise);outline:1px solid var(--line-2);position:relative;z-index:2}
 body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-webkit-user-select:none}
+
+/* Theme switch (header) */
+.theme{width:44px;height:44px;margin:-12px -10px -12px 0;display:grid;place-items:center;border-radius:8px;color:var(--ink-2)}
+.theme:hover{background:var(--hover);color:var(--ink)}.theme:active{background:var(--press)}
+.theme svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.7;fill:none}
+.dateline .r{display:flex;align-items:center;gap:var(--s2)}
+
+/* Filter row with List / Grid switch */
+.frow{display:flex;gap:var(--s2);align-items:center;margin:var(--s3) 0 var(--s5)}
+.frow .seg{flex:1;margin:0}
+.views{flex:none;display:flex;border:1px solid var(--line-2);border-radius:8px;padding:3px;background:var(--raise)}
+.views button{width:38px;height:38px;display:grid;place-items:center;border-radius:5px;color:var(--ink-3);transition:background .14s,color .14s}
+.views button:hover{background:var(--hover);color:var(--ink)}
+.views button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.views svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.7;fill:none}
+@media(max-width:400px){.seg small{display:none}}
+
+/* Grid view: one tile per game */
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2);padding-top:var(--s3)}
+@media(min-width:520px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tile{position:relative;border:1px solid var(--line-2);border-radius:8px;background:var(--raise);transition:border-color .14s,background .16s,transform .1s}
+.tile:hover{border-color:var(--ink-3)}
+.tile:active{transform:scale(.98)}
+.tile .go{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:var(--s3);min-height:0;aspect-ratio:1/1.02;padding:var(--s3);border-radius:8px}
+.tile .mark{margin:0}
+.tile .nm b{font-size:15px;line-height:1.2}
+.tile .nm span{font-size:12px}
+.tile .ck{position:absolute;top:0;right:0;width:44px;height:44px;margin:0}
+.tile .box{width:22px;height:22px}
+.tile .arr{position:absolute;right:12px;bottom:12px;width:14px;height:14px}
+.tile.done{background:var(--bg);border-color:var(--line)}
+.tile.done .nm b{color:var(--ink-3)}
+.tile.done .mark{opacity:.45}

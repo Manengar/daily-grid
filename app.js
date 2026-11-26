@@ -4,6 +4,9 @@
  *   hist   – { "YYYY-MM-DD": [gameId, ...] } games completed on each day
  *   tot    – { "YYYY-MM-DD": n } how many games were on the list that day (for weekly history)
  *   best   – longest streak seen
+ *   view   – "list" or "grid"
+ *   theme  – "auto", "light" or "dark"
+ *   ver    – data version, used to migrate older saved lists
  */
 (() => {
 "use strict";
@@ -19,25 +22,16 @@ const DEFAULT_GAMES = [
   ["Connections", NYT+"games/connections","nyt","New York Times"],
   ["Strands", NYT+"games/strands","nyt","New York Times"],
   ["The Mini", NYT+"crosswords/game/mini","nyt","New York Times"],
-  ["Spelling Bee", NYT+"puzzles/spelling-bee","nyt","New York Times"],
-  ["Letter Boxed", NYT+"puzzles/letter-boxed","nyt","New York Times"],
-  ["Crossword", NYT+"crosswords/game/daily","nyt","New York Times"],
-  ["Sudoku", NYT+"puzzles/sudoku","nyt","New York Times"],
-  ["Tiles", NYT+"puzzles/tiles","nyt","New York Times"],
-  ["Pips", NYT+"games/pips","nyt","New York Times"],
-  ["Sports Connections", NYT+"athletic/connections-sports-edition/","nyt","The Athletic"],
   ["Dordle","https://zaratustra.itch.io/dordle","wordle","Zaratustra"],
   ["Quordle","https://www.merriam-webster.com/games/quordle/","wordle","Merriam-Webster"],
   ["Octordle","https://www.britannica.com/games/octordle/","wordle","Britannica"],
-  ["Duetle","","wordle",""],
+  ["Duetle","https://duetle.com/","wordle","Independent"],
   ["Waffle","https://wafflegame.net/daily","word","Independent"],
   ["Contexto","https://contexto.me/","word","Independent"],
-  ["Dartle","","word",""],
+  ["Dartle","https://dartle.net/","word","Independent"],
   ["Worldle","https://worldlegame.io/","geo","Independent"],
   ["Globle","https://globle-game.com/","geo","Independent"],
   ["Krillion","https://krillion.io/","trivia","Independent"],
-  ["Framed","https://framed.wtf/","trivia","Independent"],
-  ["Nerdle","https://www.nerdlegame.com/","logic","Independent"],
 ].map(([name,url,cat,pub]) => ({ id: slug(name), name, url, cat, pub, fav: false }));
 
 const ICON = {
@@ -47,6 +41,9 @@ const ICON = {
   starSmall:'<svg class="star" viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg>',
   grip:'<svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
   x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  auto:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
+  light:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
+  dark:'<svg viewBox="0 0 24 24"><path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/></svg>',
 };
 
 /* ---------- Storage helpers (localStorage can throw in private mode) ---------- */
@@ -64,6 +61,20 @@ let games = store.get("games2", null) || clone(DEFAULT_GAMES);
 let hist  = store.get("hist", {});
 let tot   = store.get("tot", {});
 let best  = store.get("best", 0);
+let view  = store.get("view", "list");
+let theme = store.get("theme", "auto");
+
+/* Migration for lists saved by older versions (v1 shipped 23 games). */
+const DATA_VERSION = 2;
+if (store.get("ver", 1) < DATA_VERSION && store.get("games2", null)) {
+  const dropped = new Set(["spelling-bee","letter-boxed","crossword","sudoku","tiles","pips","sports-connections","framed","nerdle"]);
+  const links = { duetle: "https://duetle.com/", dartle: "https://dartle.net/" };
+  games = games.filter(g => !dropped.has(g.id));
+  games.forEach(g => { if (links[g.id] && !g.url) { g.url = links[g.id]; g.pub = g.pub || "Independent"; } });
+  store.set("games2", games);
+}
+store.set("ver", DATA_VERSION);
+
 let filter = "all", editing = false, editId = null, today = dayKey(), weekOffset = 0, undoFn = null;
 
 const doneSet = () => new Set(hist[today] || []);
@@ -88,7 +99,7 @@ function toggle(id, row) {
   if (!s.size) { delete hist[today]; delete tot[today]; }
   best = Math.max(best, streak()); save();
   // Update just this row so the list doesn't jump around, then refresh the header.
-  row.classList.toggle("done", !was);
+  row.classList.toggle("done", !was); // row is a list row or a grid tile
   row.querySelector(".ck").setAttribute("aria-checked", !was);
   renderHeader(); renderCounts();
   if (!was && s.size === games.length) toast("Every puzzle solved. See you tomorrow.");
@@ -171,12 +182,25 @@ function rowHTML(g, s) {
     <a class="go" href="${esc(href)}" target="_blank" rel="noopener"><div class="nm"><b>${esc(g.name)}${g.fav ? ICON.starSmall : ""}</b>${meta}</div>${ICON.arrow}</a></li>`;
 }
 
+function tileHTML(g, s) {
+  const done = s.has(g.id), id = esc(g.id);
+  const href = g.url || `https://www.google.com/search?q=${encodeURIComponent(g.name + " daily game")}`;
+  const meta = g.pub && g.pub !== CAT[g.cat] ? `<span>${esc(g.pub)}</span>` : "";
+  return `<li class="tile${done ? " done" : ""}" data-id="${id}" style="--c:var(--c-${CAT[g.cat] ? g.cat : "other"})">
+    <a class="go" href="${esc(href)}" target="_blank" rel="noopener">
+      <div class="mark" aria-hidden="true">${esc(initial(g.name))}</div>
+      <div class="nm"><b>${esc(g.name)}${g.fav ? ICON.starSmall : ""}</b>${meta}</div>${ICON.arrow}</a>
+    <button class="ck" role="checkbox" aria-checked="${done}" data-ck="${id}" aria-label="${esc(g.name)} solved"><span class="box">${ICON.check}</span></button></li>`;
+}
+
 function render() {
   renderHeader();
   const s = doneSet(), q = $("q").value.trim().toLowerCase();
   const matches = g => (!q || (g.name + " " + (g.pub || "")).toLowerCase().includes(q)) &&
     (editing || filter === "all" || (filter === "todo" && !s.has(g.id)) || (filter === "done" && s.has(g.id)) || (filter === "fav" && g.fav));
   const catOf = g => CAT[g.cat] ? g.cat : "other";
+  const grid = view === "grid" && !editing; // edit mode always uses the list, which has the drag handles
+  $("viewList").setAttribute("aria-pressed", !grid); $("viewGrid").setAttribute("aria-pressed", grid);
 
   const groups = [];
   const favs = games.filter(g => g.fav && matches(g));
@@ -189,7 +213,7 @@ function render() {
   $("list").innerHTML = groups.length ? groups.map(([k, label, gs]) => `
     <section data-ids='${esc(JSON.stringify(gs.map(g => g.id)))}'>
       <div class="sh" style="--c:${k === "fav" ? "var(--accent)" : `var(--c-${k})`}"><i class="tick"></i><h2>${esc(label)}</h2><span class="num"></span></div>
-      <ul>${gs.map(g => rowHTML(g, s)).join("")}</ul>
+      ${grid ? `<ul class="tiles">${gs.map(g => tileHTML(g, s)).join("")}</ul>` : `<ul>${gs.map(g => rowHTML(g, s)).join("")}</ul>`}
     </section>`).join("")
     : `<div class="empty"><p>${q ? "Nothing by that name." : filter === "done" ? "Nothing solved yet." : filter === "fav" ? "No starred games." : filter === "todo" ? "You’re all caught up." : "No games yet."}</p>${
         q ? "Try another search, or add it with +." : filter === "fav" ? "Tap Edit, then the star beside a game." : filter === "todo" ? "Come back tomorrow for a fresh page." : ""}</div>`;
@@ -274,7 +298,7 @@ $("form").addEventListener("submit", e => {
 /* ---------- Event wiring ---------- */
 document.addEventListener("click", e => {
   const t = e.target.closest("button"); if (!t) return; const d = t.dataset;
-  if (d.ck) toggle(d.ck, t.closest(".row"));
+  if (d.ck) toggle(d.ck, t.closest("[data-id]"));
   else if (d.filter) { filter = d.filter; render(); }
   else if (d.star) { const g = games.find(x => x.id === d.star); g.fav = !g.fav; t.setAttribute("aria-pressed", g.fav); save(); renderCounts(); }
   else if (d.edit) openSheet(games.find(x => x.id === d.edit));
@@ -307,6 +331,28 @@ $("resetAll").onclick = () => {
   const prev = games; games = clone(DEFAULT_GAMES); save(); render();
   toast("Defaults restored", "Undo", () => { games = prev; save(); render(); });
 };
+
+/* ---------- Layout and theme ---------- */
+const setView = v => { view = v; store.set("view", v); if (editing && v === "grid") $("editBtn").click(); else render(); };
+$("viewList").onclick = () => setView("list");
+$("viewGrid").onclick = () => setView("grid");
+
+const THEME_NEXT = { auto: "light", light: "dark", dark: "auto" };
+const THEME_NAME = { auto: "Match system", light: "Light", dark: "Dark" };
+function applyTheme() {
+  const root = document.documentElement;
+  if (theme === "auto") delete root.dataset.theme; else root.dataset.theme = theme;
+  $("themeBtn").innerHTML = ICON[theme];
+  $("themeBtn").setAttribute("aria-label", `Theme: ${THEME_NAME[theme]}. Tap to change.`);
+  $("themeBtn").title = `Theme: ${THEME_NAME[theme]}`;
+  // Keep the iPhone status bar colour in step with the page.
+  const bg = getComputedStyle(document.body).backgroundColor;
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => {
+    if (theme === "auto") m.content = m.media.includes("dark") ? "#131A2A" : "#F5F2EC"; else m.content = bg;
+  });
+}
+$("themeBtn").onclick = () => { theme = THEME_NEXT[theme]; store.set("theme", theme); applyTheme(); toast(`Theme: ${THEME_NAME[theme]}`); };
+applyTheme();
 
 // Start a fresh day at midnight, or when the app is reopened on a new day.
 const rollover = () => { const k = dayKey(); if (k !== today) { today = k; render(); } };

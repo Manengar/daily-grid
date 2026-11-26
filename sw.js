@@ -1,6 +1,6 @@
 /* Service worker: network-first for the app's own files, falling back to the
    cache when offline. Bump CACHE when shipping a release to clear old copies. */
-const CACHE = "daily-grid-v1";
+const CACHE = "daily-grid-v2";
 const ASSETS = ["./", "index.html", "styles.css", "app.js", "manifest.webmanifest",
   "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
