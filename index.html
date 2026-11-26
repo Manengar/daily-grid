@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Daily Grid: all your daily puzzle games in one place, with completion tracking, streaks and weekly history.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Daily Grid">
+<meta name="theme-color" content="#F5F2EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)">
+<title>Daily Grid</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="app">
+  <header>
+    <p class="dateline"><span id="date"></span><span id="best" class="num"></span></p>
+    <h1 id="greet"></h1>
+    <div class="prog" aria-live="polite">
+      <div class="segs" id="segs" aria-hidden="true"></div>
+      <div class="pline num">
+        <span id="count"></span><span aria-hidden="true">·</span><span id="streak"></span>
+        <span class="sp"></span>
+        <button class="link" id="share">Copy results</button>
+      </div>
+    </div>
+    <div class="week">
+      <div class="wk-h">
+        <h2 id="wkTitle">This week</h2><span class="rng num" id="wkRange"></span><span class="sp"></span>
+        <button class="nav" id="wkPrev" aria-label="Previous week"><svg viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></svg></button>
+        <button class="nav" id="wkNext" aria-label="Next week"><svg viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></svg></button>
+      </div>
+      <div class="days" id="days"></div>
+      <p class="wk-sum num" id="wkSum"></p>
+    </div>
+  </header>
+
+  <div class="seg" id="filters" role="group" aria-label="Show"></div>
+  <p class="editnote" id="editnote" hidden>Drag the handle to reorder, star favourites to pin them on top, or tap a name to edit it.</p>
+  <div id="list"></div>
+  <div class="danger-zone" id="dz" hidden>
+    <button class="btn" id="resetDay">Clear today’s ticks</button>
+    <button class="btn" id="resetAll">Restore default games</button>
+  </div>
+  <p class="foot">Each game opens on its own site. Your list and history are saved in this browser, so everyone you share the link with keeps their own. On iPhone, tap Share → Add to Home Screen.</p>
+</main>
+
+<nav class="bar" aria-label="Tools"><div>
+  <label class="sf" style="margin:0"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+    <input id="q" type="search" placeholder="Search games" aria-label="Search games" enterkeyhint="search" autocomplete="off"></label>
+  <button class="tb" id="editBtn" aria-pressed="false">Edit</button>
+  <button class="tb pri" id="addBtn" aria-label="Add a game"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+</div></nav>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <form id="form" novalidate>
+    <h3 id="dlgTitle">Add a game</h3>
+    <label for="fName">Name</label><input id="fName" maxlength="40" placeholder="Semantle" autocomplete="off">
+    <label for="fUrl">Link</label><input id="fUrl" type="url" inputmode="url" placeholder="https://semantle.com" autocomplete="off">
+    <label for="fPub">Publisher <small>optional</small></label><input id="fPub" maxlength="40" placeholder="Independent" autocomplete="off">
+    <label for="fCat">Section</label><select id="fCat"></select>
+    <p class="err" id="err" role="alert"></p>
+    <div class="acts"><button type="button" class="btn" id="cancel">Cancel</button><button class="btn pri" type="submit">Save</button></div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"><span id="tmsg"></span><button id="tact" type="button"></button></div>
+
+<script src="app.js"></script>
+</body>
+</html>
