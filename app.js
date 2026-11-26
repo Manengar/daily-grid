@@ -219,7 +219,8 @@ function rowHTML(g, s) {
 function tileHTML(g, s) {
   const done = s.has(g.id), id = esc(g.id);
   const href = g.url || `https://www.google.com/search?q=${encodeURIComponent(g.name + " daily game")}`;
-  const meta = g.pub && g.pub !== CAT[g.cat] ? `<span>${esc(g.pub)}</span>` : "";
+  // Tiles are narrow, so show only the first part of the label ("Weekly · subscribers" → "Weekly").
+  const meta = g.pub && g.pub !== CAT[g.cat] ? `<span>${esc(g.pub.split(" · ")[0])}</span>` : "";
   return `<li class="tile${done ? " done" : ""}" data-id="${id}" style="--c:var(--c-${CAT[g.cat] ? g.cat : "other"})">
     <a class="go" href="${esc(href)}" target="_blank" rel="noopener">
       <div class="mark" aria-hidden="true">${esc(initial(g.name))}</div>

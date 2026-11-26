@@ -194,10 +194,14 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-
 .tile{position:relative;border:1px solid var(--line-2);border-radius:8px;background:var(--raise);transition:border-color .14s,background .16s,transform .1s}
 .tile:hover{border-color:var(--ink-3)}
 .tile:active{transform:scale(.98)}
-.tile .go{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:var(--s3);min-height:0;aspect-ratio:1/1.02;padding:var(--s3);border-radius:8px}
+/* Tiles grow with their text (long names wrap to two lines); tiles in the same row match heights. */
+.tile{display:flex}
+.tile .go{flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:var(--s3);min-height:124px;height:100%;padding:var(--s3);border-radius:8px}
+.tile .nm{width:100%;padding-right:14px}
 .tile .mark{margin:0}
-.tile .nm b{font-size:15px;line-height:1.2}
-.tile .nm span{font-size:12px}
+.tile .nm b{font-size:15px;line-height:1.2;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
+@media(max-width:400px){.tile .go{padding:10px;min-height:116px}.tile .nm b{font-size:14px}.tile .arr{right:10px;bottom:10px}}
+.tile .nm span{font-size:12px;line-height:1.3;margin-top:3px}
 .tile .ck{position:absolute;top:0;right:0;width:44px;height:44px;margin:0}
 .tile .box{width:22px;height:22px}
 .tile .arr{position:absolute;right:12px;bottom:12px;width:14px;height:14px}
