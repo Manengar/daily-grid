@@ -26,7 +26,6 @@ const DEFAULT_GAMES = [
   ["Connections", NYT+"games/connections","nyt","New York Times"],
   ["Strands", NYT+"games/strands","nyt","New York Times"],
   ["The Mini", NYT+"crosswords/game/mini","nyt","New York Times"],
-  ["Dordle","https://zaratustra.itch.io/dordle","wordle","Zaratustra"],
   ["Quordle","https://www.merriam-webster.com/games/quordle/","wordle","Merriam-Webster"],
   ["Octordle","https://www.britannica.com/games/octordle/","wordle","Britannica"],
   ["Duetle","https://duetle.com/","wordle","Independent"],
@@ -83,7 +82,7 @@ let view  = store.get("view", "list");
 let theme = store.get("theme", "auto");
 
 /* Migration for lists saved by older versions (v1 shipped 23 games). */
-const DATA_VERSION = 3;
+const DATA_VERSION = 4;
 const savedVer = store.get("ver", 1), hadSave = !!store.get("games2", null);
 if (hadSave && savedVer < 2) {
   const dropped = new Set(["spelling-bee","letter-boxed","crossword","sudoku","tiles","pips","sports-connections","framed","nerdle"]);
@@ -96,6 +95,10 @@ if (hadSave && savedVer < 3) { // v3 adds the weekly NYT Bonus puzzles
   const have = new Set(games.map(g => g.id));
   const lastNyt = games.map(g => g.cat).lastIndexOf("nyt");
   games.splice(lastNyt + 1, 0, ...clone(BONUS_GAMES).filter(g => !have.has(g.id)));
+  store.set("games2", games);
+}
+if (hadSave && savedVer < 4) { // v4 drops Dordle
+  games = games.filter(g => g.id !== "dordle");
   store.set("games2", games);
 }
 store.set("ver", DATA_VERSION);
