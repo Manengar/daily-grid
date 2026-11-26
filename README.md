@@ -4,7 +4,7 @@
 
 I play a lot of daily puzzles, like Wordle, Connections, Quordle and Worldle. The official hubs only show their own games, so I kept losing track of the smaller ones. Daily Grid is a mobile-first web app that gathers them in one list, opens each game on its own site, and tracks what I've finished today.
 
-**Live:** https://Manengar.github.io/daily-grid/
+**Live:** https://YOUR-USERNAME.github.io/daily-grid/
 
 <p>
   <img src="screenshots/home.png" width="260" alt="Home screen: today's progress, weekly history and the game list">
@@ -55,7 +55,7 @@ A streak counts back from today, or from yesterday if today hasn't been started 
 ## Run locally
 
 ```bash
-git clone https://github.com/Manengar/daily-grid.git
+git clone https://github.com/YOUR-USERNAME/daily-grid.git
 cd daily-grid
 python3 -m http.server 8000   # then open http://localhost:8000
 ```
