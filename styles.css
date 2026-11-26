@@ -20,7 +20,7 @@
 --hover:light-dark(#EFEBE3,#1B2439);--press:light-dark(#E8E3D9,#232D46);
 --accent:light-dark(#2F4DB8,#9DB1FF);--on-accent:light-dark(#FFFFFF,#111830);--accent-soft:light-dark(#E4E8F6,#25304F);
 --danger:light-dark(#A63A26,#E8907C);
---c-nyt:light-dark(#1C1B19,#E9EDF7);--c-wordle:light-dark(#3D6B4A,#8FC29E);--c-word:light-dark(#916315,#D9B26A);
+--c-nyt:light-dark(#1C1B19,#E9EDF7);--c-bonus:light-dark(#46505F,#B7C1D6);--c-wordle:light-dark(#3D6B4A,#8FC29E);--c-word:light-dark(#916315,#D9B26A);
 --c-geo:light-dark(#2D6A78,#7FBBC7);--c-trivia:light-dark(#6F4A7E,#C19BD0);--c-logic:light-dark(#A6452E,#E59580);--c-other:light-dark(#6F6A62,#A7B1C8);
 --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;
 --serif:"Newsreader",Georgia,serif;--sans:"Geist",-apple-system,system-ui,sans-serif;

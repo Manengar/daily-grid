@@ -8,13 +8,15 @@ I play a lot of daily puzzles, like Wordle, Connections, Quordle and Worldle. Th
 
 <p>
   <img src="screenshots/home.png" width="260" alt="Home screen: today's progress, weekly history and the game list">
-  <img src="screenshots/edit.png" width="260" alt="Edit mode with star, remove and drag handles">
+  <img src="screenshots/grid.png" width="260" alt="Grid view: one tile per game">
   <img src="screenshots/dark.png" width="260" alt="Dark mode">
 </p>
 
 ## Features
 
-- **One list for every daily game:** 23 games out of the box, grouped by section (New York Times, Wordle variants, Word, Geography, Trivia, Numbers & logic). Tapping a game opens it on its official site.
+- **One page for every daily game:** 14 daily games out of the box, grouped by section (New York Times, Wordle variants, Word, Geography, Trivia).
+- **Weekly NYT Bonus puzzles:** Wordle in 1, Connections 3x3, Colorful Strands, Mystery Mini, Easy Mode Crossword and the monthly Special Crossword. Their ticks last all week and reset every Wednesday when the new set drops, and they don't count toward the daily total or streak. Any custom game can be set to reset weekly too. Tapping a game opens it on its official site.
+- **List or grid:** switch between a compact list and a grid of tiles. Your choice is remembered.
 - **Daily progress:** tick games off as you finish them. A segmented progress bar and a greeting show what's left, and the list resets at midnight.
 - **Streaks:** your current streak of days with at least one game finished, plus your best run.
 - **Weekly history:** a Monday–Sunday view showing how much of each day's list you finished, with arrows to step back through earlier weeks.
@@ -23,7 +25,8 @@ I play a lot of daily puzzles, like Wordle, Connections, Quordle and Worldle. Th
 - **Share:** copy a spoiler-free summary of your day for the group chat.
 - **Installable:** a web app manifest, icons and an Apple touch icon, so it can be added to the Home Screen and runs full-screen.
 - **Works offline:** a service worker caches the app's files.
-- **Light and dark mode**, safe-area aware for notched iPhones, with 44 px touch targets and full keyboard support.
+- **Light and dark themes:** follows your system by default, or tap the switch in the corner to choose. The dark theme is a deep ink blue rather than plain black.
+- **Accessible on mobile:** works around the iPhone notch and home bar, with 44 px touch targets and full keyboard support.
 
 ## How it's built
 
@@ -33,22 +36,26 @@ Plain HTML, CSS and JavaScript, with no framework, build step or backend.
 | --- | --- |
 | `index.html` | Page structure, the meta tags that make it installable, links to the manifest and icons |
 | `styles.css` | The design system (colours, type scale, spacing, radii, interaction states) plus light and dark themes |
-| `app.js` | State, rendering, streak and weekly-history logic, drag-to-reorder, add/edit sheet |
+| `app.js` | State, rendering (list and grid), streak and weekly-history logic, drag-to-reorder, theme switching, add/edit sheet |
 | `sw.js` | Service worker. Network first with a cache fallback, so the app works offline |
 | `manifest.webmanifest` | App name, colours and icons for Home Screen install |
 
 **Data model.** Everything is saved in the browser's `localStorage`, so there are no accounts and nothing leaves the device:
 
 ```
-games2  [{ id, name, url, pub, cat, fav }]      ordered list of games
+games2  [{ id, name, url, pub, cat, fav, freq }] ordered list of games (freq: daily | weekly)
 hist    { "2026-11-25": ["wordle", ...] }       games finished each day
-tot     { "2026-11-25": 23 }                    list size that day (for weekly %)
+tot     { "2026-11-25": 14 }                    daily list size that day (for weekly %)
+whist   { "2026-11-25": ["wordle-in-1", ...] } weekly games done, keyed by that week's Wednesday
 best    9                                       longest streak
+view    "list" | "grid"                         layout preference
+theme   "auto" | "light" | "dark"               theme preference
+ver     3                                       data version for migrating older saved lists
 ```
 
 A streak counts back from today, or from yesterday if today hasn't been started yet, until it reaches a day with nothing finished.
 
-**Design.** The palette is a warm off-white, charcoal text and a single cobalt accent that's used only to show state. Each section gets one muted colour for its letter mark. Type is Newsreader (a serif) for display and Geist for the interface.
+**Design.** The palette is a warm off-white with charcoal text by day and a deep ink blue by night, plus a single cobalt accent that's used only to show state. Each section gets one muted colour for its letter mark. Type is Newsreader (a serif) for display and Geist for the interface.
 
 **Trade-offs.** Saving in the browser keeps the app simple, free to host and private, but progress doesn't sync between devices. Accounts with syncing would be the next step.
 

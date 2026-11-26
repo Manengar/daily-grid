@@ -6,13 +6,17 @@
  *   best   – longest streak seen
  *   view   – "list" or "grid"
  *   theme  – "auto", "light" or "dark"
+ *   whist  – { "2026-11-25": [gameId, ...] } weekly games done, keyed by the Wednesday that week started
  *   ver    – data version, used to migrate older saved lists
+ *
+ * Games have freq "daily" (default) or "weekly". Weekly games (NYT Bonus) reset every
+ * Wednesday and are kept out of the daily progress count and streak.
  */
 (() => {
 "use strict";
 
 /* ---------- Data ---------- */
-const CATS = [["nyt","New York Times"],["wordle","Wordle variants"],["word","Word"],["geo","Geography"],["trivia","Trivia"],["logic","Numbers & logic"],["other","Other"]];
+const CATS = [["nyt","New York Times"],["bonus","NYT Bonus"],["wordle","Wordle variants"],["word","Word"],["geo","Geography"],["trivia","Trivia"],["logic","Numbers & logic"],["other","Other"]];
 const CAT = Object.fromEntries(CATS);
 const NYT = "https://www.nytimes.com/";
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") || "game";
@@ -33,6 +37,19 @@ const DEFAULT_GAMES = [
   ["Globle","https://globle-game.com/","geo","Independent"],
   ["Krillion","https://krillion.io/","trivia","Independent"],
 ].map(([name,url,cat,pub]) => ({ id: slug(name), name, url, cat, pub, fav: false }));
+
+/* NYT Bonus puzzles: a new set drops every Wednesday for Games subscribers.
+   They all link to the NYT Games home page, where the bonus section lives. */
+const NYT_GAMES = NYT + "crosswords";
+const BONUS_GAMES = [
+  ["Wordle in 1", "Weekly · subscribers"],
+  ["Connections 3x3", "Weekly · subscribers"],
+  ["Colorful Strands", "Weekly · subscribers"],
+  ["Mystery Mini", "Weekly · subscribers"],
+  ["Easy Mode Crossword", "Weekly · subscribers"],
+  ["Special Crossword", "Monthly · first week"],
+].map(([name, pub]) => ({ id: slug(name), name, url: NYT_GAMES, cat: "bonus", pub, fav: false, freq: "weekly" }));
+DEFAULT_GAMES.splice(4, 0, ...BONUS_GAMES); // right after the daily NYT games
 
 const ICON = {
   check:'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
@@ -60,25 +77,38 @@ const clone = o => JSON.parse(JSON.stringify(o));
 let games = store.get("games2", null) || clone(DEFAULT_GAMES);
 let hist  = store.get("hist", {});
 let tot   = store.get("tot", {});
+let whist = store.get("whist", {});
 let best  = store.get("best", 0);
 let view  = store.get("view", "list");
 let theme = store.get("theme", "auto");
 
 /* Migration for lists saved by older versions (v1 shipped 23 games). */
-const DATA_VERSION = 2;
-if (store.get("ver", 1) < DATA_VERSION && store.get("games2", null)) {
+const DATA_VERSION = 3;
+const savedVer = store.get("ver", 1), hadSave = !!store.get("games2", null);
+if (hadSave && savedVer < 2) {
   const dropped = new Set(["spelling-bee","letter-boxed","crossword","sudoku","tiles","pips","sports-connections","framed","nerdle"]);
   const links = { duetle: "https://duetle.com/", dartle: "https://dartle.net/" };
   games = games.filter(g => !dropped.has(g.id));
   games.forEach(g => { if (links[g.id] && !g.url) { g.url = links[g.id]; g.pub = g.pub || "Independent"; } });
   store.set("games2", games);
 }
+if (hadSave && savedVer < 3) { // v3 adds the weekly NYT Bonus puzzles
+  const have = new Set(games.map(g => g.id));
+  const lastNyt = games.map(g => g.cat).lastIndexOf("nyt");
+  games.splice(lastNyt + 1, 0, ...clone(BONUS_GAMES).filter(g => !have.has(g.id)));
+  store.set("games2", games);
+}
 store.set("ver", DATA_VERSION);
 
 let filter = "all", editing = false, editId = null, today = dayKey(), weekOffset = 0, undoFn = null;
 
-const doneSet = () => new Set(hist[today] || []);
-const save = () => { store.set("games2", games); store.set("hist", hist); store.set("tot", tot); store.set("best", best); };
+const isWeekly = g => g.freq === "weekly";
+const dailyGames = () => games.filter(g => !isWeekly(g));
+/* Weekly games reset on Wednesday: key them by the most recent Wednesday. */
+function weekKey(d = new Date()) { const w = new Date(d); w.setDate(w.getDate() - ((w.getDay() - 3 + 7) % 7)); return dayKey(w); }
+/* Everything marked done right now: today's daily games plus this week's weekly games. */
+const doneSet = () => new Set([...(hist[today] || []), ...(whist[weekKey()] || [])]);
+const save = () => { store.set("games2", games); store.set("hist", hist); store.set("tot", tot); store.set("whist", whist); store.set("best", best); };
 
 /* A streak is the number of consecutive days (ending today, or yesterday if
    today hasn't been started yet) with at least one game completed. */
@@ -93,16 +123,20 @@ const initial = n => (n.replace(/^the\s+/i, "")[0] || "?").toUpperCase();
 
 /* ---------- Actions ---------- */
 function toggle(id, row) {
-  const s = doneSet(), was = s.has(id);
+  const g = games.find(x => x.id === id), weekly = isWeekly(g);
+  const book = weekly ? whist : hist, key = weekly ? weekKey() : today;
+  const s = new Set(book[key] || []), was = s.has(id);
   was ? s.delete(id) : s.add(id);
-  hist[today] = [...s]; tot[today] = games.length;
-  if (!s.size) { delete hist[today]; delete tot[today]; }
+  book[key] = [...s];
+  if (!weekly) tot[today] = dailyGames().length;
+  if (!s.size) { delete book[key]; if (!weekly) delete tot[today]; }
   best = Math.max(best, streak()); save();
   // Update just this row so the list doesn't jump around, then refresh the header.
   row.classList.toggle("done", !was); // row is a list row or a grid tile
   row.querySelector(".ck").setAttribute("aria-checked", !was);
   renderHeader(); renderCounts();
-  if (!was && s.size === games.length) toast("Every puzzle solved. See you tomorrow.");
+  const daily = dailyGames();
+  if (!was && !weekly && daily.every(x => (hist[today] || []).includes(x.id))) toast("Every daily puzzle solved. See you tomorrow.");
 }
 
 function toast(msg, label, fn) {
@@ -115,7 +149,7 @@ $("tact").onclick = () => { if (undoFn) undoFn(); undoFn = null; $("toast").clas
 
 /* ---------- Rendering ---------- */
 function renderHeader() {
-  const s = doneSet(), total = games.length, done = games.filter(g => s.has(g.id)).length;
+  const s = doneSet(), daily = dailyGames(), total = daily.length, done = daily.filter(g => s.has(g.id)).length;
   const st = streak(), b = Math.max(best, st), hi = greeting();
   $("date").textContent = new Date().toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric" });
   $("best").textContent = b > 1 ? `Best run ${b} days` : "";
@@ -123,7 +157,7 @@ function renderHeader() {
     : done === total ? `${hi}.<br><em>All ${total} solved.</em>`
     : done ? `${hi}.<br><em>${total - done} still to play.</em>`
     : `${hi}.<br><em>${total} puzzles today.</em>`;
-  $("segs").innerHTML = games.map((_, i) => `<i class="${i < done ? "on" : ""}"></i>`).join("");
+  $("segs").innerHTML = daily.map((_, i) => `<i class="${i < done ? "on" : ""}"></i>`).join("");
   $("count").innerHTML = `<b>${done}</b> of ${total} solved`;
   $("streak").textContent = st ? `${st}-day streak` : "No streak yet";
   renderWeek();
@@ -136,7 +170,7 @@ function renderWeek() {
   let played = 0, solved = 0, cells = "";
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday); d.setDate(monday.getDate() + i);
-    const k = dayKey(d), n = (hist[k] || []).length, t = tot[k] || games.length || 1;
+    const k = dayKey(d), n = (hist[k] || []).length, t = tot[k] || dailyGames().length || 1;
     const future = d > now, isToday = d.getTime() === now.getTime();
     if (n) { played++; solved += n; }
     const pct = Math.min(100, Math.round(n / t * 100));
@@ -150,7 +184,7 @@ function renderWeek() {
   $("days").innerHTML = cells;
   $("wkTitle").textContent = weekOffset === 0 ? "This week" : weekOffset === -1 ? "Last week" : "Week of";
   $("wkRange").textContent = `${fmt(monday)} – ${fmt(sun)}`;
-  $("wkSum").textContent = played ? `Played ${played} of 7 days · ${solved} puzzles solved` : weekOffset ? "No puzzles that week." : "Nothing played yet this week.";
+  $("wkSum").textContent = played ? `Played ${played} of 7 day${played === 1 ? "" : "s"} · ${solved} puzzle${solved === 1 ? "" : "s"} solved` : weekOffset ? "No puzzles that week." : "Nothing played yet this week.";
   $("wkNext").disabled = weekOffset >= 0;
 }
 
@@ -161,7 +195,7 @@ function renderCounts() {
     `<button data-filter="${k}" aria-pressed="${k === filter}">${l}<small class="num">${c[k]}</small></button>`).join("");
   document.querySelectorAll("section[data-ids]").forEach(sec => {
     const ids = JSON.parse(sec.dataset.ids), n = ids.filter(i => s.has(i)).length;
-    sec.querySelector(".sh span").textContent = `${n} of ${ids.length}`;
+    sec.querySelector(".sh span").textContent = `${n} of ${ids.length}${sec.dataset.weekly ? " this week" : ""}`;
   });
 }
 
@@ -211,7 +245,7 @@ function render() {
   }
 
   $("list").innerHTML = groups.length ? groups.map(([k, label, gs]) => `
-    <section data-ids='${esc(JSON.stringify(gs.map(g => g.id)))}'>
+    <section data-ids='${esc(JSON.stringify(gs.map(g => g.id)))}'${k === "bonus" ? ' data-weekly="1"' : ""}>
       <div class="sh" style="--c:${k === "fav" ? "var(--accent)" : `var(--c-${k})`}"><i class="tick"></i><h2>${esc(label)}</h2><span class="num"></span></div>
       ${grid ? `<ul class="tiles">${gs.map(g => tileHTML(g, s)).join("")}</ul>` : `<ul>${gs.map(g => rowHTML(g, s)).join("")}</ul>`}
     </section>`).join("")
@@ -272,7 +306,7 @@ $("list").addEventListener("keydown", e => {
 function openSheet(g) {
   editId = g ? g.id : null;
   $("dlgTitle").textContent = g ? "Edit game" : "Add a game"; $("err").textContent = "";
-  $("fName").value = g?.name || ""; $("fUrl").value = g?.url || ""; $("fPub").value = g?.pub || ""; $("fCat").value = g?.cat || "other";
+  $("fName").value = g?.name || ""; $("fUrl").value = g?.url || ""; $("fPub").value = g?.pub || ""; $("fCat").value = g?.cat || "other"; $("fFreq").value = g?.freq || "daily";
   try { $("dlg").showModal(); } catch { $("dlg").setAttribute("open", ""); }
   setTimeout(() => (g && !g.url ? $("fUrl") : $("fName")).focus(), 30);
 }
@@ -281,16 +315,16 @@ $("cancel").onclick = () => $("dlg").close();
 $("dlg").addEventListener("click", e => { if (e.target === $("dlg")) $("dlg").close(); });
 $("form").addEventListener("submit", e => {
   e.preventDefault();
-  const name = $("fName").value.trim(), pub = $("fPub").value.trim(), cat = $("fCat").value;
+  const name = $("fName").value.trim(), pub = $("fPub").value.trim(), cat = $("fCat").value, freq = $("fFreq").value;
   let url = $("fUrl").value.trim();
   if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
   if (!name) { $("err").textContent = "Give the game a name."; return; }
   try { new URL(url); } catch { $("err").textContent = "Paste the game’s web address."; return; }
-  if (editId) Object.assign(games.find(g => g.id === editId), { name, url, pub, cat });
+  if (editId) Object.assign(games.find(g => g.id === editId), { name, url, pub, cat, freq });
   else {
     let id = slug(name), n = 2;
     while (games.some(g => g.id === id)) id = slug(name) + "-" + n++;
-    games.push({ id, name, url, pub, cat, fav: false });
+    games.push({ id, name, url, pub, cat, fav: false, freq });
   }
   save(); $("dlg").close(); render(); toast(editId ? "Saved" : `Added ${name}`);
 });
@@ -318,8 +352,8 @@ $("editBtn").onclick = () => {
 $("wkPrev").onclick = () => { weekOffset--; renderWeek(); };
 $("wkNext").onclick = () => { if (weekOffset < 0) { weekOffset++; renderWeek(); } };
 $("share").onclick = async () => {
-  const s = doneSet(), done = games.filter(g => s.has(g.id)).length, st = streak();
-  const text = `Daily Grid · ${new Date().toLocaleDateString(undefined,{month:"short",day:"numeric"})}\n${games.map(g => s.has(g.id) ? "■" : "□").join("")}\n${done}/${games.length} solved${st ? ` · ${st}-day streak` : ""}`;
+  const s = doneSet(), daily = dailyGames(), done = daily.filter(g => s.has(g.id)).length, st = streak();
+  const text = `Daily Grid · ${new Date().toLocaleDateString(undefined,{month:"short",day:"numeric"})}\n${daily.map(g => s.has(g.id) ? "■" : "□").join("")}\n${done}/${daily.length} solved${st ? ` · ${st}-day streak` : ""}`;
   try { await navigator.clipboard.writeText(text); toast("Results copied"); } catch { toast("Couldn’t copy in this view"); }
 };
 $("resetDay").onclick = () => {
