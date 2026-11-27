@@ -36,6 +36,7 @@ const DEFAULT_GAMES = [
   ["Globle","https://globle-game.com/","geo","Independent"],
   ["MapTap","https://www.maptap.gg/","geo","Independent"],
   ["Krillion","https://krillion.io/","trivia","Independent"],
+  ["Zebra","https://www.playzebra.io/","trivia","The Handover"],
 ].map(([name,url,cat,pub]) => ({ id: slug(name), name, url, cat, pub, fav: false }));
 
 /* NYT Bonus puzzles: a new set drops every Wednesday for Games subscribers.
@@ -83,7 +84,7 @@ let view  = store.get("view", "list");
 let theme = store.get("theme", "auto");
 
 /* Migration for lists saved by older versions (v1 shipped 23 games). */
-const DATA_VERSION = 5;
+const DATA_VERSION = 6;
 const savedVer = store.get("ver", 1), hadSave = !!store.get("games2", null);
 if (hadSave && savedVer < 2) {
   const dropped = new Set(["spelling-bee","letter-boxed","crossword","sudoku","tiles","pips","sports-connections","framed","nerdle"]);
@@ -105,6 +106,11 @@ if (hadSave && savedVer < 4) { // v4 drops Dordle
 if (hadSave && savedVer < 5 && !games.some(g => g.id === "maptap")) { // v5 adds MapTap
   const after = games.findIndex(g => g.id === "globle");
   games.splice(after >= 0 ? after + 1 : games.length, 0, { id: "maptap", name: "MapTap", url: "https://www.maptap.gg/", cat: "geo", pub: "Independent", fav: false });
+  store.set("games2", games);
+}
+if (hadSave && savedVer < 6 && !games.some(g => g.id === "zebra")) { // v6 adds Zebra
+  const after = games.findIndex(g => g.id === "krillion");
+  games.splice(after >= 0 ? after + 1 : games.length, 0, { id: "zebra", name: "Zebra", url: "https://www.playzebra.io/", cat: "trivia", pub: "The Handover", fav: false });
   store.set("games2", games);
 }
 store.set("ver", DATA_VERSION);

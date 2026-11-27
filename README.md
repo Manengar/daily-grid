@@ -14,7 +14,7 @@ I play a lot of daily puzzles, like Wordle, Connections, Quordle and Worldle. Th
 
 ## Features
 
-- **One page for every daily game:** 14 daily games out of the box, grouped by section (New York Times, Wordle variants, Word, Geography, Trivia).
+- **One page for every daily game:** 15 daily games out of the box, grouped by section (New York Times, Wordle variants, Word, Geography, Trivia).
 - **Weekly NYT Bonus puzzles:** Wordle in 1, Connections 3x3, Colorful Strands, Mystery Mini, Easy Mode Crossword and the monthly Special Crossword. Their ticks last all week and reset every Wednesday when the new set drops, and they don't count toward the daily total or streak. Any custom game can be set to reset weekly too. Tapping a game opens it on its official site.
 - **List or grid:** switch between a compact list and a grid of tiles. Your choice is remembered.
 - **Daily progress:** tick games off as you finish them. A segmented progress bar and a greeting show what's left, and the list resets at midnight.
@@ -51,7 +51,7 @@ whist   { "2026-11-25": ["wordle-in-1", ...] } weekly games done, keyed by that 
 best    9                                       longest streak
 view    "list" | "grid"                         layout preference
 theme   "auto" | "light" | "dark"               theme preference
-ver     5                                       data version for migrating older saved lists
+ver     6                                       data version for migrating older saved lists
 ```
 
 A streak counts back from today, or from yesterday if today hasn't been started yet, until it reaches a day with nothing finished.
