@@ -27,6 +27,7 @@
 --ease:cubic-bezier(.2,.7,.2,1)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.4 var(--sans);overflow-x:clip;-webkit-font-smoothing:antialiased}
 button,input,select{font:inherit;color:inherit}
@@ -208,3 +209,7 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none;-
 .tile.done{background:var(--bg);border-color:var(--line)}
 .tile.done .nm b{color:var(--ink-3)}
 .tile.done .mark{opacity:.45}
+
+/* Inline text link (footer) */
+.inl{color:var(--accent);text-underline-offset:3px;display:inline-block;padding:10px 0;margin:-10px 0}
+.foot+.foot{margin-top:var(--s3)}

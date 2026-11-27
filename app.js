@@ -34,6 +34,7 @@ const DEFAULT_GAMES = [
   ["Dartle","https://dartle.net/","word","Independent"],
   ["Worldle","https://worldlegame.io/","geo","Independent"],
   ["Globle","https://globle-game.com/","geo","Independent"],
+  ["MapTap","https://www.maptap.gg/","geo","Independent"],
   ["Krillion","https://krillion.io/","trivia","Independent"],
 ].map(([name,url,cat,pub]) => ({ id: slug(name), name, url, cat, pub, fav: false }));
 
@@ -82,7 +83,7 @@ let view  = store.get("view", "list");
 let theme = store.get("theme", "auto");
 
 /* Migration for lists saved by older versions (v1 shipped 23 games). */
-const DATA_VERSION = 4;
+const DATA_VERSION = 5;
 const savedVer = store.get("ver", 1), hadSave = !!store.get("games2", null);
 if (hadSave && savedVer < 2) {
   const dropped = new Set(["spelling-bee","letter-boxed","crossword","sudoku","tiles","pips","sports-connections","framed","nerdle"]);
@@ -99,6 +100,11 @@ if (hadSave && savedVer < 3) { // v3 adds the weekly NYT Bonus puzzles
 }
 if (hadSave && savedVer < 4) { // v4 drops Dordle
   games = games.filter(g => g.id !== "dordle");
+  store.set("games2", games);
+}
+if (hadSave && savedVer < 5 && !games.some(g => g.id === "maptap")) { // v5 adds MapTap
+  const after = games.findIndex(g => g.id === "globle");
+  games.splice(after >= 0 ? after + 1 : games.length, 0, { id: "maptap", name: "MapTap", url: "https://www.maptap.gg/", cat: "geo", pub: "Independent", fav: false });
   store.set("games2", games);
 }
 store.set("ver", DATA_VERSION);

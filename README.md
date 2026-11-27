@@ -22,6 +22,7 @@ I play a lot of daily puzzles, like Wordle, Connections, Quordle and Worldle. Th
 - **Weekly history:** a Monday–Sunday view showing how much of each day's list you finished, with arrows to step back through earlier weeks.
 - **Customise:** add any game by link, edit or remove games (with undo), star favourites to pin them on top, and drag to reorder. The drag handles also work with the ↑/↓ keys.
 - **Search and filters:** All, To do, Done and Starred.
+- **Google account helper:** a footer link that signs the app's built-in browser out of Google, for when a game remembers the wrong account.
 - **Share:** copy a spoiler-free summary of your day for the group chat.
 - **Installable:** a web app manifest, icons and an Apple touch icon, so it can be added to the Home Screen and runs full-screen.
 - **Works offline:** a service worker caches the app's files.
@@ -50,7 +51,7 @@ whist   { "2026-11-25": ["wordle-in-1", ...] } weekly games done, keyed by that 
 best    9                                       longest streak
 view    "list" | "grid"                         layout preference
 theme   "auto" | "light" | "dark"               theme preference
-ver     3                                       data version for migrating older saved lists
+ver     5                                       data version for migrating older saved lists
 ```
 
 A streak counts back from today, or from yesterday if today hasn't been started yet, until it reaches a day with nothing finished.
